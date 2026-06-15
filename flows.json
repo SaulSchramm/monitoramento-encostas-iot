@@ -1,0 +1,263 @@
+[
+    {
+        "id": "fluxo_encostas_virtual",
+        "type": "tab",
+        "label": "Monitoramento de Encostas",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "gerador_sensor_virtual",
+        "type": "inject",
+        "z": "fluxo_encostas_virtual",
+        "name": "Simular Leitura do Solo (2s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "$floor($random() * 20)",
+        "payloadType": "jsonata",
+        "x": 190,
+        "y": 140,
+        "wires": [
+            [
+                "transmissao_mqtt_out"
+            ]
+        ]
+    },
+    {
+        "id": "transmissao_mqtt_out",
+        "type": "mqtt out",
+        "z": "fluxo_encostas_virtual",
+        "name": "Publish (Nuvem MQTT)",
+        "topic": "encostas/sensor/dados",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "broker_mackenzie",
+        "x": 480,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "recepcao_mqtt_in",
+        "type": "mqtt in",
+        "z": "fluxo_encostas_virtual",
+        "name": "Subscribe (Defesa Civil)",
+        "topic": "encostas/sensor/dados",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "broker_mackenzie",
+        "inputs": 0,
+        "x": 180,
+        "y": 260,
+        "wires": [
+            [
+                "logica_decisao"
+            ]
+        ]
+    },
+    {
+        "id": "logica_decisao",
+        "type": "function",
+        "z": "fluxo_encostas_virtual",
+        "name": "Algoritmo de Risco",
+        "func": "var inclinacao = parseInt(msg.payload);\nvar status = \"NORMAL\";\n\nif (inclinacao >= 5 && inclinacao <= 12) {\n    status = \"ATENÇÃO\";\n} else if (inclinacao > 12) {\n    status = \"PERIGO\";\n}\n\nmsg.payload = {\n    \"graus\": inclinacao,\n    \"status\": status\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 260,
+        "wires": [
+            [
+                "debug_tela",
+                "separador_dados"
+            ]
+        ]
+    },
+    {
+        "id": "debug_tela",
+        "type": "debug",
+        "z": "fluxo_encostas_virtual",
+        "name": "Visualizar Mensagens",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "node_grafico_linha",
+        "type": "ui_chart",
+        "z": "fluxo_encostas_virtual",
+        "name": "Histórico de Inclinação",
+        "group": "ui_group_graficos",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "Variação do Solo (°)",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "20",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#ffbb78",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 580,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "node_ponteiro",
+        "type": "ui_gauge",
+        "z": "fluxo_encostas_virtual",
+        "name": "Medidor em Tempo Real",
+        "group": "ui_group_graficos",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "Status",
+        "label": "Ângulo Atual",
+        "format": "{{value}}°",
+        "min": 0,
+        "max": "20",
+        "colors": [
+            "#00ff00",
+            "#e6e600",
+            "#ca3c3c"
+        ],
+        "seg1": "5",
+        "seg2": "12",
+        "className": "",
+        "x": 590,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "separador_dados",
+        "type": "change",
+        "z": "fluxo_encostas_virtual",
+        "name": "Extrair Graus",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.graus",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 310,
+        "y": 420,
+        "wires": [
+            [
+                "node_grafico_linha",
+                "node_ponteiro"
+            ]
+        ]
+    },
+    {
+        "id": "broker_mackenzie",
+        "type": "mqtt-broker",
+        "name": "Broker Público Aula 4",
+        "broker": "broker.mqtt-dashboard.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "ui_group_graficos",
+        "type": "ui_group",
+        "name": "Telemetria da Encosta",
+        "tab": "ui_tab_monitoramento",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "ui_tab_monitoramento",
+        "type": "ui_tab",
+        "name": "Painel de Controle - Defesa Civil",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "debbbb6dfe82a072",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
