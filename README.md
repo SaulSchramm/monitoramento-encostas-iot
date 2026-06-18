@@ -1,49 +1,34 @@
-# monitoramento-encostas-iot
-Projeto prático de IoT para monitoramento de encostas - ODS 11 - Mackenzie
+# Sistema IoT para Monitoramento de Estabilidade de Encostas (ODS 11)
 
-# 🌍 Sistema IoT para Monitoramento Preventivo de Encostas (ODS 11)
+Este projeto consiste em um protótipo de sistema IoT desenvolvido para monitorar a inclinação e estabilidade de encostas em áreas de vulnerabilidade social e geológica, alinhado à meta 11.5 dos Objetivos de Desenvolvimento Sustentável da ONU (Cidades e Comunidades Sustentáveis). O sistema detecta variações angulares críticas que precedem deslizamentos de terra e envia alertas em tempo real.
 
-Este repositório contém a arquitetura de software de um **sistema IoT híbrido** voltado para o monitoramento em tempo real da estabilidade estrutural de solos em encostas urbanas. O projeto foi desenvolvido como atividade prática da disciplina de Internet das Coisas da **Universidade Presbiteriana Mackenzie**, alinhando-se à meta 11.5 do ODS 11 (Cidades e Comunidades Sustentáveis).
+## 🛠️ Hardware e Componentes Utilizados
+* **Microcontrolador:** ESP32 (módulo Wi-Fi integrado para transmissão de dados).
+* **Sensor Principal:** MPU-6050 (Acelerômetro e Giroscópio de 3 eixos para medição de inclinação).
+* **Protoboard e Jumpers:** Para interconexão dos componentes.
 
-O sistema mimetiza o comportamento de um hardware homólogo (microcontrolador **ESP32** + sensor **MPU-6050**), realizando a ingestão de telemetria angular, transmissão em nuvem via **protocolo MQTT** (porta 1883) e acionamento dinâmico de alertas visuais baseados em um algoritmo analítico de risco em JavaScript.
+## 🔌 Diagrama de Montagem (Pinagem I2C)
+As conexões físicas (ou no simulador) entre o ESP32 e o MPU-6050 seguem o padrão de comunicação I2C:
 
----
+| MPU-6050 | ESP32 | Descrição |
+|----------|-------|-----------|
+| VCC      | 3V3   | Alimentação 3.3V |
+| GND      | GND   | Terra / Comum |
+| SCL      | GPIO 22 | Clock da comunicação I2C |
+| SDA      | GPIO 21 | Dados da comunicação I2C |
 
-## 🛠️ Tecnologias Utilizadas
+## 🌐 Protocolo de Comunicação e Broker MQTT
+Os dados de telemetria coletados são estruturados em formato **JSON** e publicados via protocolo **MQTT**, garantindo leveza e agilidade no envio das informações.
+* **Broker Utilizado:** HiveMQ Public Broker (`broker.hivemq.com`)
+* **Porta:** 1883 (TCP padrão)
+* **Tópico de Publicação:** `projeto/encostas/telemetria`
 
-*   **Node-RED** (v5.0.0) — Orquestração de fluxos e lógica de backend.
-*   **Node-RED Dashboard** (`@flowfuse/node-red-dashboard`) — Interface gráfica do usuário (UI).
-*   **Protocolo MQTT** — Comunicação leve e assíncrona baseada na arquitetura Publish/Subscribe.
-*   **Broker MQTT Público** (`broker.mqtt-dashboard.com`) — Servidor de mensageria em nuvem.
-
----
-
-## 🚀 Como Importar e Executar o Projeto
-
-Para rodar este fluxo no seu ambiente local do Node-RED, siga os passos abaixo:
-
-1.  **Instale as dependências da interface:**
-    No menu lateral do seu Node-RED, vá em `Gerenciar Paleta` (Manage Palette) > aba `Instalar` e pesquise por `@flowfuse/node-red-dashboard`. Instale o pacote.
-2.  **Baixe o código do fluxo:**
-    Faça o download do arquivo `.json` disponível neste repositório.
-3.  **Importe no Node-RED:**
-    Clique no menu superior direito do Node-RED, selecione `Importar` (Import), cole o conteúdo do arquivo JSON ou selecione o arquivo baixado e clique em **Importar**.
-4.  **Execute o sistema:**
-    Clique no botão vermelho **Deploy** no canto superior direito para ativar os fluxos.
-5.  **Acesse o Dashboard:**
-    Abra o seu navegador e acesse a interface gráfica através do endereço: `http://127.0.0.1:1880/dashboard`.
-
----
-
-## 📊 Regras de Negócio do Algoritmo
-O nó de função processa a inclinação recebida e atualiza o estado do atuador visual conforme os limites estabelecidos:
-*   🟢 **Menor que 5°:** Estado NORMAL.
-*   🟡 **Entre 5° e 12°:** Estado de ATENÇÃO (Mudança do painel para amarelo).
-*   🔴 **Maior que 12°:** Estado de PERIGO CRÍTICO (Mudança do painel para vermelho).
-
----
-
-## 📝 Autor e Orientação
-*   **Aluno:** Saul Soares Schramm (RA: 10441619)
-*   **Instituição:** Universidade Presbiteriana Mackenzie — Polo Santos (ADS)
-*   **Orientador:** Prof. Andre Luis de Oliveira
+### Exemplo de Payload JSON Enviado:
+```json
+{
+  "id_dispositivo": "ESP32-ENCOSTA-01",
+  "inclinacao_x": 2.45,
+  "inclinacao_y": -1.12,
+  "temperatura": 26.50,
+  "status": "NORMAL"
+}
